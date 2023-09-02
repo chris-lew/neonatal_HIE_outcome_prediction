@@ -1,0 +1,15 @@
+FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
+
+ENV TZ=America/Los_Angeles 
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update
+RUN apt-get install ffmpeg libsm6 libxext6 git tmux -y
+
+RUN python3 -m pip install -U pip
+
+RUN pip install --no-cache-dir matplotlib jupyter_contrib_nbextensions jupyter_nbextensions_configurator \
+pydicom pandas 'jupyter<=6.5.4' scikit-image scikit-learn opencv-python tensorboard nibabel pynrrd unet SimpleITK \
+torchmetrics pytorch-lightning monai rising torchio seaborn
+
+RUN pip install git+https://github.com/shijianjian/EfficientNet-PyTorch-3D

@@ -1,0 +1,10 @@
+.ipynb_checkpoints/
+.vscode/
+code/__pycache__/
+code/.ipynb_checkpoints/
+code/archive/
+data/MedicalNet_pytorch_files2/
+data/OLD_splits/
+data/sample_set/
+docs/*
+ext_storage/
