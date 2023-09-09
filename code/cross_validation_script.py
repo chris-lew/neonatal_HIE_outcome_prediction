@@ -16,6 +16,7 @@ from training_parameters import default_training_parameters
 import warnings
 warnings.filterwarnings(action='ignore', category=UserWarning)
 
+FOLD_COUNT = 5
 
 # Run dicts; not included will be populated from default
 run_list = [
@@ -99,7 +100,7 @@ for run in run_list:
     # More logging for each run
     start_time = datetime.now()
 
-    f.write('###################################################################\n')
+    f.write('####################################################################################\n')
     f.write(f'Model cross validation start: {datetime.now().strftime("%Y-%m-%d %H:%M")}\n')
     f.write('Cross validation run info:\n')
     f.write(pformat(run))
@@ -121,7 +122,7 @@ for run in run_list:
 
     # Train
     val_final_aurocs, val_best_aurocs, epoch_of_val_best_aurocs = cross_validation(
-        fold_count = 5,
+        fold_count = FOLD_COUNT,
         img_dirs = run['img_dirs'],
         total_epochs = run['total_epochs'],
         batch_size = run['batch_size'],
@@ -154,8 +155,6 @@ for run in run_list:
         val_final_aurocs, val_best_aurocs, epoch_of_val_best_aurocs
     ))
 
-    print()
-    print('########################################################################')
-    print()
+    print('\n####################################################################################\n')
 
 f.close()

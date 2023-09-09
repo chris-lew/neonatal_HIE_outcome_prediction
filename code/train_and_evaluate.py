@@ -356,9 +356,10 @@ def cross_validation(
     num_workers = 4,
     save_base_dir = "../ext_storage/saved_models_storage",
     fine_tune_unfreeze = None,
+    random_seed = 11,
 ):
     # See test_runs_script.py for an explanation on each parameter
-
+    random.seed(random_seed)
     start_time = datetime.now()
 
     ###############################################################################
@@ -487,8 +488,8 @@ def cross_validation(
 
         trainer.fit(model, train_loader, val_loader)
 
-        val_final_aurocs.append(model.current_val_auroc)
-        val_best_aurocs.append(model.best_val_auroc)
+        val_final_aurocs.append(model.current_val_auroc.detach().cpu())
+        val_best_aurocs.append(model.best_val_auroc.detach().cpu())
         epoch_of_val_best_aurocs.append(model.epoch_of_best_val_auroc)
 
         ###############################################################################
