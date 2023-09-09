@@ -80,6 +80,12 @@ class LitHEAL(pl.LightningModule):
         self.test_acc = torchmetrics.Accuracy(task='binary')
         self.test_auroc = torchmetrics.AUROC(task='binary')
 
+        # Saving some additional parameters
+        self.best_val_auroc = 0
+        self.epoch_of_best_val_auroc = 0
+        self.current_val_auroc = 0
+
+
     def forward(self, img, additional_inputs = None):
         # Depending on task, collect data from dataset and return prediction
         if self.additional_inputs:
@@ -156,10 +162,17 @@ class LitHEAL(pl.LightningModule):
         avg_val_loss = torch.stack(self.val_step_loss).mean()
         self.val_step_loss.clear()
 
+        val_auroc = self.val_auroc.compute()
+
+        if val_auroc > self.best_val_auroc:
+            self.best_val_auroc = val_auroc
+            self.epoch_of_best_val_auroc = self.current_epoch
+        self.current_val_auroc = val_auroc
+
         self.log_dict({
             'avg_val_loss': avg_val_loss,
             'avg_val_acc': self.val_acc.compute(),
-            'avg_val_auroc': self.val_auroc.compute(),
+            'avg_val_auroc': val_auroc,
         }, on_step=False, on_epoch=True)
 
         self.val_acc.reset()
