@@ -21,29 +21,31 @@ training_set = pd.read_csv('../data/train_set.csv').values.flatten().tolist()
 val_set = pd.read_csv('../data/val_set.csv').values.flatten().tolist()
 training_and_val_sets = training_set + val_set
 
+sequence_path_base_str = '../ext_storage/mri_data/preprocessed/'
+
 sequence_combinations = [
-    ['../ext_storage/mri_data/preprocessed/DTI_eddy_MD_wm'],
-    ['../ext_storage/mri_data/preprocessed/T1_wm'],
-    ['../ext_storage/mri_data/preprocessed/T2_wm'],
-    ['../ext_storage/mri_data/preprocessed/DTI_eddy_trace_wm'],
-    ['../ext_storage/mri_data/preprocessed/DTI_eddy_FA_wm'],
+    [sequence_path_base_str + 'DTI_eddy_MD_wm'],
+    [sequence_path_base_str + 'T1_wm'],
+    [sequence_path_base_str + 'T2_wm'],
+    [sequence_path_base_str + 'DTI_eddy_trace_wm'],
+    [sequence_path_base_str + 'DTI_eddy_FA_wm'],
     [
-        '../ext_storage/mri_data/preprocessed/T1_wm',
-        '../ext_storage/mri_data/preprocessed/T2_wm',
-        '../ext_storage/mri_data/preprocessed/DTI_eddy_MD_wm',
+        sequence_path_base_str + 'T1_wm',
+        sequence_path_base_str + 'T2_wm',
+        sequence_path_base_str + 'DTI_eddy_MD_wm',
     ],
     [
-        '../ext_storage/mri_data/preprocessed/T1_wm',
-        '../ext_storage/mri_data/preprocessed/T2_wm',
-        '../ext_storage/mri_data/preprocessed/DTI_eddy_MD_wm',
-        '../ext_storage/mri_data/preprocessed/DTI_eddy_trace_wm',
+        sequence_path_base_str + 'T1_wm',
+        sequence_path_base_str + 'T2_wm',
+        sequence_path_base_str + 'DTI_eddy_MD_wm',
+        sequence_path_base_str + 'DTI_eddy_trace_wm',
     ],
     [
-        '../ext_storage/mri_data/preprocessed/T1_wm',
-        '../ext_storage/mri_data/preprocessed/T2_wm',
-        '../ext_storage/mri_data/preprocessed/DTI_eddy_MD_wm',
-        '../ext_storage/mri_data/preprocessed/DTI_eddy_trace_wm',
-        '../ext_storage/mri_data/preprocessed/DTI_eddy_FA_wm'
+        sequence_path_base_str + 'T1_wm',
+        sequence_path_base_str + 'T2_wm',
+        sequence_path_base_str + 'DTI_eddy_MD_wm',
+        sequence_path_base_str + 'DTI_eddy_trace_wm',
+        sequence_path_base_str + 'DTI_eddy_FA_wm'
     ],
 ]
 
