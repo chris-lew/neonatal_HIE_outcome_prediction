@@ -19,11 +19,29 @@ def get_model_by_params(
     net_architecture,
     additional_feature_cols,
     efficientnet_model_name,
-    resnet_class = None,
-    basic_block_depth = 3,
-    pretrained_path = None,
-    ensemble_model_params = None,
+    resnet_class,
+    densenet_class,
+    basic_block_depth,
+    pretrained_path,
+    ensemble_model_params,
 ):
+    """
+    Returns a network based on parameters. Used in training and CV functions.
+    Note, there are no defaults since they are all defaulted in other functions.
+
+    Parameters
+    ----------
+    Please see train_model or CV for parameter description
+    
+
+    Returns
+    -------
+    net: pytorch module
+        Trained or untrained network based on parameters
+    pretrained_layers: list of str
+        List of pretrained layers, for use if model is pretrained
+
+    """
 
     # Will be replaced if there are pretrained layers
     pretrained_layers = None
@@ -89,6 +107,22 @@ def get_model_by_params(
                     n_input_channels=len(img_dirs),
                     num_classes = 1
                 )
+
+    elif net_architecture == 'densenet':
+        if additional_feature_cols:
+            densenet = densenet_class(
+                spatial_dims=3,
+                in_channels =len(img_dirs),
+                out_channels  = 64
+            )
+            net = CombineNet(densenet, 64, len(additional_feature_cols))
+
+        else:
+            net = densenet_class(
+                spatial_dims=3,
+                in_channels =len(img_dirs),
+                out_channels  = 1
+            )
             
 
     elif net_architecture == 'efficientnet':
@@ -138,8 +172,15 @@ def get_model_by_params(
                 net = EfficientNetBN(
                     ensemble_model_params['cnn_model_list'][i]['efficientnet_model_name'], 
                     spatial_dims=3, 
-                    in_channels=len(img_dirs), 
+                    in_channels=1,
                     num_classes=1
+                )
+
+            elif ensemble_model_params['cnn_model_list'][i]['net_architecture'] == 'densenet':
+                net = ensemble_model_params['cnn_model_list'][i]['densenet_class'](
+                    spatial_dims = 3,
+                    in_channels = 1,
+                    out_channels = 1
                 )
 
             ## Insert for other model types here
@@ -199,7 +240,10 @@ def train_model(
     transforms,
     efficientnet_model_name,
     label_csv_columns,
+    train_subject_list,
+    val_subject_list = None,
     resnet_class = None,
+    densenet_class = None,
     basic_block_depth = 3,
     pretrained_path = None,
     ensemble_model_params = None,
@@ -207,15 +251,72 @@ def train_model(
     save_base_dir = "../ext_storage/saved_models_storage",
     fine_tune_unfreeze = None,
 ):
+    """
+    Trains an individual model. Can include a validation set to monitor performance
+    if desired. 
+
+    To see default parameters, see training_parameters.py
+
+    Parameters
+    ----------
+    img_dirs: list of str
+        Image directories to use as channels
+    total_epochs: int
+        Total number of epochs
+    batch_size: int
+        Batch size
+    dropout: float (between 0.3 - 1)
+        Dropout for basic CNN
+    learning_rate: float
+        Learning rate
+    net_architecture: str
+        Architecture to use; see training_parameters.py for options
+    additional_feature_cols: list of str
+        Additional tabular data to include
+    transforms: rising.Transforms
+        Rising transforms to sue
+    efficientnet_model_name: str
+        Name of efficientnet model to use
+    label_csv_columns: dict
+        Dictionary containing names of columns for use in label csv, see training_parameters.py
+    train_subject_list: list of str
+        List of subjects in training set
+    val_subject_list: list of str
+        List of subjects in optional validation set
+    resnet_class: monai resnet class
+        Monai resnet class to use if architecture is set appropriately
+    densenet_class: monai densenet class
+        Monai densenet class to use if architecture is set appropriately
+    basic_block_depth: int
+        Block depth for basic CNN
+    pretrained_path: str or Path
+        Pretrained model to load
+    ensemble_model_params: dict
+        Ensemble model parameters, see see training_parameters.py
+    num_workers: int
+        Number of works for dataloaders
+    save_base_dir: str or path
+        Dir to save data
+    fine_tune_unfreeze: float
+        Percentage of epochs to keep frozen, then will unfreeze weights
+    
+
+    Returns (ONLY if a validation set is included)
+    -------
+    val_final_auroc: float
+        Final validation AUROC
+    val_best_auroc: float
+        Best validation AUROC achieved
+    epoch_of_val_best_auroc: float
+        Epoch of above AUROC
+
+    """
+
     # See test_runs_script.py for an explanation on each parameter
 
     start_time = datetime.now()
 
     ###############################################################################
-
-    # Load in sets
-    training_set = pd.read_csv('../data/train_set.csv').values.flatten().tolist()
-    val_set = pd.read_csv('../data/val_set.csv').values.flatten().tolist()
 
     # Create datasets
 
@@ -223,21 +324,22 @@ def train_model(
 
     train_dataset = HEAL_Dataset(
         image_dirs = img_dirs, 
-        subject_list = training_set,
+        subject_list = train_subject_list,
         label_csv_path = label_csv_path,
         subject_col = label_csv_columns['subject_col'],
         label_col = label_csv_columns['label_col'],
         addtional_feature_cols = additional_feature_cols,
     )
 
-    val_dataset = HEAL_Dataset(
-        image_dirs = img_dirs, 
-        subject_list = val_set,
-        label_csv_path = label_csv_path,
-        subject_col = label_csv_columns['subject_col'],
-        label_col = label_csv_columns['label_col'],
-        addtional_feature_cols = additional_feature_cols,
-    )
+    if val_subject_list:
+        val_dataset = HEAL_Dataset(
+            image_dirs = img_dirs, 
+            subject_list = val_subject_list,
+            label_csv_path = label_csv_path,
+            subject_col = label_csv_columns['subject_col'],
+            label_col = label_csv_columns['label_col'],
+            addtional_feature_cols = additional_feature_cols,
+        )
 
     # Create dataloaders
 
@@ -255,7 +357,14 @@ def train_model(
         pin_memory=True
     )
 
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
+    if val_subject_list:
+        val_loader = DataLoader(
+            val_dataset, 
+            batch_size=batch_size, 
+            shuffle=False, 
+            num_workers=num_workers, 
+            pin_memory=True
+        )
 
     ###############################################################################
 
@@ -269,6 +378,7 @@ def train_model(
         additional_feature_cols,
         efficientnet_model_name,
         resnet_class,
+        densenet_class,
         basic_block_depth,
         pretrained_path,
         ensemble_model_params,
@@ -318,14 +428,25 @@ def train_model(
         # fast_dev_run = True
     )
 
-    trainer.fit(model, train_loader, val_loader)
+    if val_subject_list:
+        trainer.fit(model, train_loader, val_loader)
+    else:
+        trainer.fit(model, train_loader)
+
+
+    # Get val performance if val is included
+    if val_subject_list:
+        val_final_auroc = model.get_current_val_auroc()
+        val_best_auroc = model.get_best_val_auroc()
+        epoch_of_val_best_auroc = model.get_epoch_of_best_val_auroc()
 
     ###############################################################################
 
     # Clean up
 
-    del train_dataset, val_dataset
-    del train_loader, val_loader
+    del train_dataset, train_loader
+    if val_subject_list:
+        del val_dataset, val_loader
     del model, trainer
     gc.collect()
     torch.cuda.empty_cache()
@@ -336,6 +457,10 @@ def train_model(
         datetime.now().strftime("%Y-%m-%d %H:%M")
     ))
     print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
+
+    if val_subject_list:
+        return val_final_auroc, val_best_auroc, epoch_of_val_best_auroc
+
 
 def cross_validation(
     fold_count,
@@ -349,7 +474,9 @@ def cross_validation(
     transforms,
     efficientnet_model_name,
     label_csv_columns,
+    subject_list,
     resnet_class = None,
+    densenet_class = None,
     basic_block_depth = 3,
     pretrained_path = None,
     ensemble_model_params = None,
@@ -358,21 +485,74 @@ def cross_validation(
     fine_tune_unfreeze = None,
     random_seed = 11,
 ):
+    """
+    Performs N-fold cross validation and returns performance metrics
+
+    To see default parameters, see training_parameters.py
+
+    Parameters
+    ----------
+    fold_count: int
+        Number of folds to use
+    img_dirs: list of str
+        Image directories to use as channels
+    total_epochs: int
+        Total number of epochs
+    batch_size: int
+        Batch size
+    dropout: float (between 0.3 - 1)
+        Dropout for basic CNN
+    learning_rate: float
+        Learning rate
+    net_architecture: str
+        Architecture to use; see training_parameters.py for options
+    additional_feature_cols: list of str
+        Additional tabular data to include
+    transforms: rising.Transforms
+        Rising transforms to sue
+    efficientnet_model_name: str
+        Name of efficientnet model to use
+    label_csv_columns: dict
+        Dictionary containing names of columns for use in label csv, see training_parameters.py
+    subject_list: list of str
+        List of subjects in training set
+    resnet_class: monai resnet class
+        Monai resnet class to use if architecture is set appropriately
+    densenet_class: monai densenet class
+        Monai densenet class to use if architecture is set appropriately
+    basic_block_depth: int
+        Block depth for basic CNN
+    pretrained_path: str or Path
+        Pretrained model to load
+    ensemble_model_params: dict
+        Ensemble model parameters, see see training_parameters.py
+    num_workers: int
+        Number of works for dataloaders
+    save_base_dir: str or path
+        Dir to save data
+    fine_tune_unfreeze: float
+        Percentage of epochs to keep frozen, then will unfreeze weights
+    
+
+    Returns
+    -------
+    val_final_aurocs: float
+        Final validation AUROCs
+    val_best_aurocs: float
+        Best validation AUROCs achieved
+    epoch_of_val_best_aurocs: float
+        Epoch of above AUROCs
+
+    """
+
     # See test_runs_script.py for an explanation on each parameter
     random.seed(random_seed)
     start_time = datetime.now()
 
     ###############################################################################
 
-    # Load in sets
-    training_set = pd.read_csv('../data/train_set.csv').values.flatten().tolist()
-    val_set = pd.read_csv('../data/val_set.csv').values.flatten().tolist()
-
-    # Add sets together and shuffle
-    training_and_val_sets = training_set + val_set
-    random.shuffle(training_and_val_sets)
-
-    fold_size = round(len(training_and_val_sets) / fold_count)
+    # Get fold size
+    fold_size = round(len(subject_list) / fold_count)
 
     # Create lists to hold performance
     val_final_aurocs = []
@@ -382,8 +562,8 @@ def cross_validation(
     for fold_k in range(fold_count):
         fold_start_time = datetime.now()
 
-        val_set = training_and_val_sets[fold_k * fold_size: (fold_k + 1) * fold_size]
-        training_set = [x for x in training_and_val_sets if x not in val_set]
+        val_set = subject_list[fold_k * fold_size: (fold_k + 1) * fold_size]
+        training_set = [x for x in subject_list if x not in val_set]
 
         # Create datasets
 
@@ -411,7 +591,7 @@ def cross_validation(
 
         # Include drop last for train; otherwise batch norm may fail if 1 leftover at end of epoch
         if transforms:
-            composed_transforms = rtr.Compose(transforms, transform_call=default_transform_call)
+            transforms = rtr.Compose(transforms, transform_call=default_transform_call)
 
         train_loader = DataLoader(
             train_dataset, 
@@ -419,7 +599,7 @@ def cross_validation(
             shuffle=True, 
             num_workers=num_workers, 
             drop_last=True,
-            batch_transforms=composed_transforms,
+            batch_transforms=transforms,
             pin_memory=True
         )
 
@@ -437,6 +617,7 @@ def cross_validation(
             additional_feature_cols,
             efficientnet_model_name,
             resnet_class,
+            densenet_class,
             basic_block_depth,
             pretrained_path,
             ensemble_model_params,
@@ -488,9 +669,9 @@ def cross_validation(
 
         trainer.fit(model, train_loader, val_loader)
 
-        val_final_aurocs.append(model.current_val_auroc.detach().cpu())
-        val_best_aurocs.append(model.best_val_auroc.detach().cpu())
-        epoch_of_val_best_aurocs.append(model.epoch_of_best_val_auroc)
+        val_final_aurocs.append(model.get_current_val_auroc())
+        val_best_aurocs.append(model.get_best_val_auroc())
+        epoch_of_val_best_aurocs.append(model.get_epoch_of_best_val_auroc())
 
         ###############################################################################
 
@@ -510,6 +691,9 @@ def cross_validation(
         ))
         print('Time elapsed (hh:mm:ss.ms) {}'.format(time_elapsed))
 
+    val_final_aurocs = np.array(val_final_aurocs).tolist()
+    val_best_aurocs = np.array(val_best_aurocs).tolist()
+
     time_elapsed = datetime.now() - start_time 
     print('Cross validation trained from {} to {}'.format(
         start_time.strftime("%Y-%m-%d %H:%M"),
@@ -525,6 +709,7 @@ def cross_validation(
     print('Epoch of best Val AUROCs:', epoch_of_val_best_aurocs)
 
     return val_final_aurocs, val_best_aurocs, epoch_of_val_best_aurocs
+
 
 def predict_from_checkpoint(
     checkpoint_path,

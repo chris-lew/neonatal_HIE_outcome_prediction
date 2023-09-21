@@ -88,7 +88,7 @@ TRAIN_TRANSFORMS_MIRROR_PROB = [
     rtr.Mirror(dims=DiscreteParameter([0, 1, 2]), keys=["image"], p=0.75),
 ]
 
-TRAIN_TRANSFORMS_ROT_MIRROR = [
+TRAIN_TRANSFORMS_ROT_MIRROR_PROB = [
     rtr.Rot90((0, 1, 2), keys=["image"], p=0.75),
     rtr.Mirror(dims=DiscreteParameter([0, 1, 2]), keys=["image"], p=.75),
 ]

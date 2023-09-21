@@ -226,6 +226,21 @@ class LitHEAL(pl.LightningModule):
         optimizer = self.optimizer(self.net.parameters(), lr=self.learning_rate)
         scheduler = CosineAnnealingLR(optimizer, self.trainer.max_epochs)
         return [optimizer], [scheduler]
+    
+    def get_current_val_auroc(self):
+        if type(self.current_val_auroc) == torch.Tensor:
+            return self.current_val_auroc.detach().cpu().numpy()
+        else:
+            return self.current_val_auroc
+    
+    def get_best_val_auroc(self):
+        if type(self.best_val_auroc) == torch.Tensor:
+            return self.best_val_auroc.detach().cpu().numpy()
+        else:
+            return self.best_val_auroc
+    
+    def get_epoch_of_best_val_auroc(self):     
+        return self.epoch_of_best_val_auroc
 
 
 # Fine tuning
