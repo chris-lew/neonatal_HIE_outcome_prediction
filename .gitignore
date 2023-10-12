@@ -3,6 +3,7 @@
 code/__pycache__/
 code/.ipynb_checkpoints/
 code/archive/
+code/for_evan*
 data/MedicalNet_pytorch_files2/
 data/OLD_splits/
 data/sample_set/

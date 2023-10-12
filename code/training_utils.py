@@ -17,7 +17,7 @@ def train_models_by_params(
     default_training_parameters = default_training_parameters,
     validation_set = None,
     training_type = 'standard', # other option is cross_validation  
-    fold_count = 5
+    fold_count = 5 # For cross_validation
 ):
     """
     Trains models by training an individual model or running CV. 
@@ -467,7 +467,7 @@ Mean Best Val AUROC: {np.mean(val_best_aurocs)}
         print('\n####################################################################################\n')
 
     # Get permutation with highest performance
-    highest_performance_grid_search_permutation = max(grid_search_performance)
+    highest_performance_grid_search_permutation = max(grid_search_performance, key=grid_search_performance.get)
 
     # Now train that model on all training data to maximize performance
     highest_performance_training_parameters = dict()
