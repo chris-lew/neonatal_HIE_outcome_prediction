@@ -85,6 +85,10 @@ class LitHEAL(pl.LightningModule):
         self.epoch_of_best_val_auroc = 0
         self.current_val_auroc = 0
 
+        # For predictions
+        self.predictions = []
+        self.prediction_labels = []
+
 
     def forward(self, img, additional_inputs = None):
         # Depending on task, collect data from dataset and return prediction
@@ -209,7 +213,11 @@ class LitHEAL(pl.LightningModule):
 
     def predict_step(self, batch, batch_idx):
         # Get data and predict
-        img, y = batch["image"], batch["label"]
+        img = batch["image"]
+
+        if 'label' in batch.keys():
+            y = batch["label"]
+            self.prediction_labels.append(y)
 
         if self.additional_inputs:
             additional_features = batch['additional_features']
@@ -218,6 +226,8 @@ class LitHEAL(pl.LightningModule):
 
         else:
             y_hat = self(img)
+
+        self.predictions.append(y_hat)
 
         return y_hat
 
@@ -241,6 +251,12 @@ class LitHEAL(pl.LightningModule):
     
     def get_epoch_of_best_val_auroc(self):     
         return self.epoch_of_best_val_auroc
+    
+    def get_all_predictions(self):
+        return [x.detach().cpu().item() for x in self.predictions]
+
+    def get_all_prediction_labels(self):
+        return [x.detach().cpu().item() for x in self.prediction_labels]
 
 
 # Fine tuning

@@ -109,7 +109,7 @@ Default test run params:
         # Get area to save runs
         save_base_dir = Path(run['save_base_dir']) / 'lightning_logs'
         # Figure out how many runs have already occurred so it lines up with tensorboard
-        version_number = len(os.listdir(save_base_dir))
+        version_number = len([x for x in os.listdir(save_base_dir) if ('.csv' not in x) and ('.txt' not in x)])
 
         # Logging
         with open(run_log_file_path, 'a') as run_log_file:
@@ -382,7 +382,7 @@ Default test run params:
         # Get area to save runs
         save_base_dir = Path(run['save_base_dir']) / 'lightning_logs'
         # Figure out how many runs have already occurred so it lines up with tensorboard
-        version_number = len(os.listdir(save_base_dir))
+        version_number = len([x for x in os.listdir(save_base_dir) if ('.csv' not in x) and ('.txt' not in x)])
 
         # Logging
         with open(run_log_file_path, 'a') as run_log_file:
@@ -494,7 +494,7 @@ Mean Best Val AUROC: {np.mean(val_best_aurocs)}
     # Get area to save runs
     save_base_dir = Path(highest_performance_training_parameters['save_base_dir']) / 'lightning_logs'
     # Figure out how many runs have already occurred so it lines up with tensorboard
-    version_number = len(os.listdir(save_base_dir))
+    version_number = len([x for x in os.listdir(save_base_dir) if ('.csv' not in x) and ('.txt' not in x)])
 
     # Logging
     with open(run_log_file_path, 'a') as run_log_file:

@@ -460,6 +460,8 @@ def train_model(
 
     if val_subject_list:
         return val_final_auroc, val_best_auroc, epoch_of_val_best_auroc
+    else:
+        return 0, 0, 0 # No val set performance
 
 
 def cross_validation(
@@ -711,15 +713,16 @@ def cross_validation(
     return val_final_aurocs, val_best_aurocs, epoch_of_val_best_aurocs
 
 
-def predict_from_checkpoint(
+def predict_from_checkpoint_with_labels(
     checkpoint_path,
-    test_csv_path, 
+    subject_list, 
     img_dirs,
-    dropout,
     net_architecture,
     label_csv_columns,
     additional_feature_cols,
-    efficientnet_model_name,
+    efficientnet_model_name = 'efficientnet-b0',
+    densenet_class = None,
+    dropout = 0.3,
     resnet_class = resnet18,
     basic_block_depth = 3,
     ensemble_model_params = None,
@@ -731,12 +734,10 @@ def predict_from_checkpoint(
     #
     # Importantly, this loads from a pytorch lightning checkpoint
 
-    start_time = datetime.now().tolist()
+    start_time = datetime.now()
 
     ###############################################################################
 
-    # Load in sets
-    test_set = pd.read_csv(Path(test_csv_path))
 
     # Create datasets
     batch_size = 1
@@ -745,7 +746,7 @@ def predict_from_checkpoint(
 
     test_dataset = HEAL_Dataset(
         image_dirs = img_dirs, 
-        subject_list = test_set.values.flatten(),
+        subject_list = subject_list,
         label_csv_path = label_csv_path,
         subject_col = label_csv_columns['subject_col'],
         label_col = label_csv_columns['label_col'],
@@ -753,7 +754,7 @@ def predict_from_checkpoint(
     )
 
     label_df = pd.read_csv(label_csv_path)
-    test_labels = label_df.loc[label_df['studyid'].isin(test_set), 'primary_all'].values
+    test_labels = label_df.loc[label_df['studyid'].isin(subject_list), 'primary_all'].values
 
     # Create dataloaders
 
@@ -771,11 +772,11 @@ def predict_from_checkpoint(
         additional_feature_cols,
         efficientnet_model_name,
         resnet_class,
+        densenet_class,
         basic_block_depth,
-        ensemble_model_params,
+        ensemble_model_params = ensemble_model_params,
         pretrained_path = None
     )
-
 
     model = LitHEAL(
         net = net,
@@ -801,7 +802,11 @@ def predict_from_checkpoint(
         enable_model_summary=False
     )
 
-    preds = trainer.predict(model, dataloaders=test_loader)
+    trainer.predict(model, dataloaders=test_loader)
+
+    preds = model.get_all_predictions()
+    test_labels = model.get_all_prediction_labels()
+    # preds = [tensor.item() for tensor in preds]
 
     ###############################################################################
 
@@ -813,7 +818,7 @@ def predict_from_checkpoint(
     torch.cuda.empty_cache()
 
     time_elapsed = datetime.now() - start_time 
-    print('Model trained from {} to {}'.format(
+    print('Model run from {} to {}'.format(
         start_time.strftime("%Y-%m-%d %H:%M"),
         datetime.now().strftime("%Y-%m-%d %H:%M")
     ))
