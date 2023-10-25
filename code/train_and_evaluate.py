@@ -792,6 +792,9 @@ def predict_from_checkpoint_with_labels(
         # Loading the checkpoint resets this.. will investigate later
         model.additional_inputs = True
 
+    if net_architecture == 'logistic_regression':
+        model.logistic_regression = True
+
     # Added CPU support
     trainer = pl.Trainer(
         accelerator='auto',
