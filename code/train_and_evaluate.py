@@ -153,7 +153,7 @@ def get_model_by_params(
         if pretrained_path:
             pass # Add loading
 
-    elif net_architecture == 'ensemble':
+    elif net_architecture == 'ensemble' or net_architecture == 'decision_fusion':
 
         cnn_model_list = []
 
@@ -214,12 +214,19 @@ def get_model_by_params(
             # Append to model list
             lr_model_list.append(net)
 
-        # Now assemble ensemble model
-        net = EnsembleModel(
-            cnn_model_list=cnn_model_list, 
-            cnn_image_index_list = ensemble_model_params['cnn_image_index_list'],
-            lr_model_list=lr_model_list
-        )
+        if net_architecture == 'ensemble':
+            # Now assemble ensemble model
+            net = EnsembleModel(
+                cnn_model_list=cnn_model_list, 
+                cnn_image_index_list = ensemble_model_params['cnn_image_index_list'],
+                lr_model_list=lr_model_list
+            )
+        else:
+            net = DecisionFusionEnsemble(
+                cnn_model_list=cnn_model_list, 
+                cnn_image_index_list = ensemble_model_params['cnn_image_index_list'],
+                lr_model_list=lr_model_list
+            )
 
         pretrained_layers = []
 
@@ -389,7 +396,7 @@ def train_model(
         additional_inputs = bool(additional_feature_cols),
         logistic_regression= bool(net_architecture == 'logistic_regression'),
         pretrained_params = pretrained_layers,
-        lr = learning_rate
+        lr = learning_rate,
     )
 
     # print(model)
@@ -566,6 +573,7 @@ def cross_validation(
 
         val_set = subject_list[fold_k * fold_size: (fold_k + 1) * fold_size]
         training_set = [x for x in subject_list if x not in val_set]
+        assert len(set(val_set) & set (training_set)) == 0
 
         # Create datasets
 
@@ -630,7 +638,7 @@ def cross_validation(
             additional_inputs = bool(additional_feature_cols),
             logistic_regression= bool(net_architecture == 'logistic_regression'),
             pretrained_params = pretrained_layers,
-            lr = learning_rate
+            lr = learning_rate,
         )
 
         # print(model)
@@ -782,11 +790,15 @@ def predict_from_checkpoint_with_labels(
         net = net,
         additional_inputs = bool(additional_feature_cols),
         logistic_regression= bool(net_architecture == 'logistic_regression'),
-        lr = 3e-4
+        lr = 3e-4,
     )
 
     # Load checkpoint data
-    model = model.load_from_checkpoint(checkpoint_path, net=net)
+    model = model.load_from_checkpoint(
+        checkpoint_path, 
+        net=net,
+        strict= bool(net_architecture != 'decision_fusion') ## If decision fusion, there will be extra params
+    )
 
     if additional_feature_cols:
         # Loading the checkpoint resets this.. will investigate later
@@ -794,6 +806,9 @@ def predict_from_checkpoint_with_labels(
 
     if net_architecture == 'logistic_regression':
         model.logistic_regression = True
+
+    if net_architecture == 'decision_fusion':
+        model.decision_fusion = True
 
     # Added CPU support
     trainer = pl.Trainer(

@@ -29,6 +29,7 @@ class LitHEAL(pl.LightningModule):
         pretrained_params = None,
         lr = 1e-3,
         optimizer = AdamW,
+        decision_fusion = False,
     ):
         """
         Initialize. Some parameters are used to help define what outputs
@@ -56,6 +57,7 @@ class LitHEAL(pl.LightningModule):
         self.net = net
         self.additional_inputs = additional_inputs
         self.logistic_regression = logistic_regression
+        self.decision_fusion = decision_fusion
 
         # Freeze parameters if inputted network is pretrained
         if pretrained_params:
@@ -92,6 +94,11 @@ class LitHEAL(pl.LightningModule):
 
     def forward(self, img, additional_inputs = None):
         # Depending on task, collect data from dataset and return prediction
+        # if self.decision_fusion:
+        #     if self.additional_inputs:
+        #         return self.net(img, additional_inputs)
+        #     else:
+        #         return self.net(img)
         if self.additional_inputs:
             if self.logistic_regression:
                 return torch.sigmoid(self.net(additional_inputs)[:, 0])
@@ -565,6 +572,59 @@ class EnsembleModel(nn.Module):
 
         model_outputs = torch.cat(model_outputs, axis=1)
         out = self.classifier(model_outputs)
+
+        return out
+    
+class DecisionFusionEnsemble(nn.Module):
+    # Decision fusion ensemble
+    # Similar to ensemble, but no linear layer after predictions
+    # Averages predictions; if weights are frozen no training is needed
+
+    def __init__(
+        self,
+        cnn_model_list,
+        cnn_image_index_list,
+        lr_model_list
+    ):
+        """
+        Initializes the model. 
+        When imaging data is loaded, it is loaded as a multi-channel image.
+        The index list is to allow for the CNN to decide which channel to use. 
+
+        It is assumed that LR models take all tabular data. 
+        
+        Parameters
+        ----------
+        cnn_model_list: [nn.Module, nn.Module, ...]
+            List of CNN models
+        cnn_image_index_list: [int, int, ...]
+            Length of output from network
+        lr_model_list: [nn.Module, nn.Module, ...]
+            List of LR models
+        """
+
+        super().__init__()
+
+        # To allow for undetermined number of models to be included, will use a module list
+        self.cnn_model_list = nn.ModuleList(cnn_model_list)
+        self.lr_model_list = nn.ModuleList(lr_model_list)
+        self.cnn_image_index_list = cnn_image_index_list
+
+
+    def forward(self, images, additional_inputs):
+        model_outputs = []
+
+        for i in range(len(self.cnn_model_list)):
+            # Get appropriate channel with an extra dim to feed model
+            out = self.cnn_model_list[i](torch.unsqueeze(images[:, self.cnn_image_index_list[i]], 1))
+            model_outputs.append(out)
+
+        for model in self.lr_model_list:
+            out = model(additional_inputs)
+            model_outputs.append(out)
+
+        model_outputs = torch.cat(model_outputs, axis=1)
+        out = torch.unsqueeze(torch.mean(model_outputs, dim=1), 1)
 
         return out
 
