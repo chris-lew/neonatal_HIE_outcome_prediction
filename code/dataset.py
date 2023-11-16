@@ -77,7 +77,7 @@ class HEAL_Dataset(Dataset):
             else:
                 subject_image_array = []
                 for image_dir in image_dirs:
-                    subject_channel = np.load(image_dirs[0] / f'{subject}.npy')
+                    subject_channel = np.load(image_dir / f'{subject}.npy')
                     subject_image_array.append(subject_channel)
                 subject_image_array = np.stack(subject_image_array)
                 self.image_arrays.append(subject_image_array)
@@ -93,6 +93,8 @@ class HEAL_Dataset(Dataset):
 
             # Keep only included subjects
             label_df = label_df.loc[label_df[subject_col].isin(subject_list)]
+
+            assert len(label_df) == len(subject_list), 'label does not contain all patients in subject list or the column/data is incorrect'
 
             # Reorder so its the same order as the list
             label_df[subject_col] = pd.Categorical(

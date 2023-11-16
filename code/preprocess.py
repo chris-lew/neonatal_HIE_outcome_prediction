@@ -227,6 +227,7 @@ def preprocess_image_data(
     reshape_shape = None,
     crop_params = None,
     range_scale_params = None,
+    rot90_params = None,
     check_shape = None,
     skip_missing = False,
     skip_errors = False
@@ -244,11 +245,12 @@ def preprocess_image_data(
     base_save_dir / {sequence_name}_{dir_suffix} / {subject_name}.npy
     
     preprocess methods include and are limited to:
-        ['N4BC', 'tight_crop', 'crop', 'range_scale', 'intensity_norm', 'z_score', 'reshape']
+        ['N4BC', 'tight_crop', 'crop', 'range_scale', 'intensity_norm', 'z_score', 'reshape', 'rot90']
         N4BC: N4 bias correction
         tight_crop OR crop: crop method to use
         range_scale OR intensity_norm OR z_score OR (intensity_norm AND z_score): methods to scale/normalize intensity values
         reshape: reshape images
+        rot90: rotate by 90 degrees
     
     Parameters
     ----------
@@ -270,6 +272,8 @@ def preprocess_image_data(
             Area to crop to, if included
         range_scale_params: (float, float)
             Range to scale to, if included
+        rot90_params: (int, int)
+            Axes to rotate by 90 degrees
         check_shape: (int, int, int)
             Will ensure that all loaded images are this shape
         skip_missing: bool
@@ -299,7 +303,7 @@ def preprocess_image_data(
             os.mkdir(base_save_dir / f'{sequence}{dir_suffix}')
 
     # Check that methods are correct
-    all_methods = ['N4BC', 'tight_crop', 'crop', 'range_scale', 'intensity_norm', 'z_score', 'reshape']
+    all_methods = ['N4BC', 'tight_crop', 'crop', 'range_scale', 'intensity_norm', 'z_score', 'reshape', 'rot90']
     for method in preprocess_methods:
         assert method in all_methods, f'method must be one of the following {all_methods}'
 
@@ -351,6 +355,9 @@ def preprocess_image_data(
             # Reshape if included
             if 'reshape' in preprocess_methods:
                 img = reshape_image(img, reshape_shape)
+
+            if 'rot90' in preprocess_methods:
+                img = np.rot90(img, axes=rot90_params)
 
             # Save data
             img = img.astype('float32')

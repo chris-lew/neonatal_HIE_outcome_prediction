@@ -33,6 +33,7 @@ default_training_parameters = {
 
     # Other
     'save_base_dir': '../ext_storage/saved_models_storage',
+    'label_csv_path': '../data/outcomes_updated.csv',
     'label_csv_columns': {
         'subject_col': 'studyid',
         'label_col': 'primary_all'

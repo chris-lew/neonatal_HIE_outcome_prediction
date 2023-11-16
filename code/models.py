@@ -24,12 +24,11 @@ class LitHEAL(pl.LightningModule):
     def __init__(
         self,
         net,
+        net_architecture,
         additional_inputs = False,
-        logistic_regression = False,
         pretrained_params = None,
         lr = 1e-3,
         optimizer = AdamW,
-        decision_fusion = False,
     ):
         """
         Initialize. Some parameters are used to help define what outputs
@@ -56,8 +55,7 @@ class LitHEAL(pl.LightningModule):
 
         self.net = net
         self.additional_inputs = additional_inputs
-        self.logistic_regression = logistic_regression
-        self.decision_fusion = decision_fusion
+        self.net_architecture = net_architecture
 
         # Freeze parameters if inputted network is pretrained
         if pretrained_params:
@@ -94,13 +92,15 @@ class LitHEAL(pl.LightningModule):
 
     def forward(self, img, additional_inputs = None):
         # Depending on task, collect data from dataset and return prediction
-        # if self.decision_fusion:
-        #     if self.additional_inputs:
-        #         return self.net(img, additional_inputs)
-        #     else:
-        #         return self.net(img)
-        if self.additional_inputs:
-            if self.logistic_regression:
+
+        # No final sigmoid needed for decision fusion
+        if self.net_architecture == 'decision_fusion':
+            if self.additional_inputs:
+                return self.net(img, additional_inputs)
+            else:
+                return self.net(img)
+        elif self.additional_inputs:
+            if self.net_architecture == 'logistic_regression':
                 return torch.sigmoid(self.net(additional_inputs)[:, 0])
             else:
                 return torch.sigmoid(self.net(img, additional_inputs)[:, 0])
@@ -527,7 +527,8 @@ class EnsembleModel(nn.Module):
         cnn_model_list,
         cnn_image_index_list,
         lr_model_list,
-        out_classes = 1
+        out_classes = 1,
+        dropout = 0
     ):
         """
         Initializes the model. 
@@ -558,6 +559,9 @@ class EnsembleModel(nn.Module):
         # Classifier that will predict based on all included models
         self.classifier = nn.Linear(len(cnn_model_list) + len(lr_model_list), out_classes)
 
+        # By default, p is set to zero for no dropout
+        self.drop = nn.Dropout(p = dropout)
+
     def forward(self, images, additional_inputs):
         model_outputs = []
 
@@ -571,12 +575,13 @@ class EnsembleModel(nn.Module):
             model_outputs.append(out)
 
         model_outputs = torch.cat(model_outputs, axis=1)
-        out = self.classifier(model_outputs)
+        x = self.drop(model_outputs)
+        out = self.classifier(x)
 
         return out
     
-class DecisionFusionEnsemble(nn.Module):
-    # Decision fusion ensemble
+class DecisionFusion(nn.Module):
+    # Decision fusion 
     # Similar to ensemble, but no linear layer after predictions
     # Averages predictions; if weights are frozen no training is needed
 
@@ -617,11 +622,13 @@ class DecisionFusionEnsemble(nn.Module):
         for i in range(len(self.cnn_model_list)):
             # Get appropriate channel with an extra dim to feed model
             out = self.cnn_model_list[i](torch.unsqueeze(images[:, self.cnn_image_index_list[i]], 1))
-            model_outputs.append(out)
+            # Run sigmoid to get predictions rather than logits
+            model_outputs.append(torch.sigmoid(out))
 
         for model in self.lr_model_list:
             out = model(additional_inputs)
-            model_outputs.append(out)
+            # Run sigmoid to get predictions rather than logits
+            model_outputs.append(torch.sigmoid(out))
 
         model_outputs = torch.cat(model_outputs, axis=1)
         out = torch.unsqueeze(torch.mean(model_outputs, dim=1), 1)

@@ -222,7 +222,7 @@ def get_model_by_params(
                 lr_model_list=lr_model_list
             )
         else:
-            net = DecisionFusionEnsemble(
+            net = DecisionFusion(
                 cnn_model_list=cnn_model_list, 
                 cnn_image_index_list = ensemble_model_params['cnn_image_index_list'],
                 lr_model_list=lr_model_list
@@ -246,6 +246,7 @@ def train_model(
     additional_feature_cols,
     transforms,
     efficientnet_model_name,
+    label_csv_path,
     label_csv_columns,
     train_subject_list,
     val_subject_list = None,
@@ -326,9 +327,6 @@ def train_model(
     ###############################################################################
 
     # Create datasets
-
-    label_csv_path = '../data/outcomes_updated.csv'
-
     train_dataset = HEAL_Dataset(
         image_dirs = img_dirs, 
         subject_list = train_subject_list,
@@ -394,7 +392,7 @@ def train_model(
     model = LitHEAL(
         net = net,
         additional_inputs = bool(additional_feature_cols),
-        logistic_regression= bool(net_architecture == 'logistic_regression'),
+        net_architecture = net_architecture,
         pretrained_params = pretrained_layers,
         lr = learning_rate,
     )
@@ -482,6 +480,7 @@ def cross_validation(
     additional_feature_cols,
     transforms,
     efficientnet_model_name,
+    label_csv_path,
     label_csv_columns,
     subject_list,
     resnet_class = None,
@@ -577,8 +576,6 @@ def cross_validation(
 
         # Create datasets
 
-        label_csv_path = '../data/outcomes_updated.csv'
-
         train_dataset = HEAL_Dataset(
             image_dirs = img_dirs, 
             subject_list = training_set,
@@ -636,7 +633,7 @@ def cross_validation(
         model = LitHEAL(
             net = net,
             additional_inputs = bool(additional_feature_cols),
-            logistic_regression= bool(net_architecture == 'logistic_regression'),
+            net_architecture = net_architecture,
             pretrained_params = pretrained_layers,
             lr = learning_rate,
         )
@@ -726,6 +723,7 @@ def predict_from_checkpoint_with_labels(
     subject_list, 
     img_dirs,
     net_architecture,
+    label_csv_path,
     label_csv_columns,
     additional_feature_cols,
     efficientnet_model_name = 'efficientnet-b0',
@@ -749,8 +747,6 @@ def predict_from_checkpoint_with_labels(
 
     # Create datasets
     batch_size = 1
-
-    label_csv_path = '../data/outcomes_updated.csv'
 
     test_dataset = HEAL_Dataset(
         image_dirs = img_dirs, 
@@ -789,7 +785,7 @@ def predict_from_checkpoint_with_labels(
     model = LitHEAL(
         net = net,
         additional_inputs = bool(additional_feature_cols),
-        logistic_regression= bool(net_architecture == 'logistic_regression'),
+        net_architecture = net_architecture,
         lr = 3e-4,
     )
 
@@ -797,18 +793,16 @@ def predict_from_checkpoint_with_labels(
     model = model.load_from_checkpoint(
         checkpoint_path, 
         net=net,
+        additional_inputs = bool(additional_feature_cols),
+        net_architecture = net_architecture,
         strict= bool(net_architecture != 'decision_fusion') ## If decision fusion, there will be extra params
     )
 
-    if additional_feature_cols:
-        # Loading the checkpoint resets this.. will investigate later
-        model.additional_inputs = True
+    # if additional_feature_cols:
+    #     # Loading the checkpoint resets this.. will investigate later
+    #     model.additional_inputs = True
 
-    if net_architecture == 'logistic_regression':
-        model.logistic_regression = True
-
-    if net_architecture == 'decision_fusion':
-        model.decision_fusion = True
+    # model.net_architecture = net_architecture
 
     # Added CPU support
     trainer = pl.Trainer(

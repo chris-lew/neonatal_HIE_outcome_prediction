@@ -67,7 +67,7 @@ Default test run params:
 {pformat(default_training_parameters)} \n\n""")
 
     csv_header = [
-        'brief_run_description', 'AUC_val_final', 'AUC_val_best', 'AUC_data', 'version_number'
+        'brief_run_description', 'AUC_val_final', 'AUC_val_best', 'AUC_data', 'version_number',
         'img_dirs', 'net_architecture', 'additional_feature_cols',
         'transforms', 'basic_block_depth', 'total_epochs', 'batch_size', 'learning_rate',
         'ensemble_model_params', 'resnet_class', 'densenet_class', 'pretrained_path', 
@@ -142,6 +142,7 @@ Model {training_type} start: {datetime.now().strftime("%Y-%m-%d %H:%M")}
                 ensemble_model_params = run['ensemble_model_params'],
                 save_base_dir=run['save_base_dir'],
                 fine_tune_unfreeze=run['fine_tune_unfreeze'],
+                label_csv_path=run['label_csv_path'],
                 label_csv_columns=run['label_csv_columns'],
                 num_workers=run['num_workers']
             )
@@ -188,6 +189,7 @@ Best Val AUROC: {np.mean(val_best_auroc)}
                 ensemble_model_params = run['ensemble_model_params'],
                 save_base_dir=run['save_base_dir'],
                 fine_tune_unfreeze=run['fine_tune_unfreeze'],
+                label_csv_path=run['label_csv_path'],
                 label_csv_columns=run['label_csv_columns'],
                 num_workers=run['num_workers']
             )
@@ -417,6 +419,7 @@ grid_search_permutation RUN version_{version_number}""")
             ensemble_model_params = run['ensemble_model_params'],
             save_base_dir=run['save_base_dir'],
             fine_tune_unfreeze=run['fine_tune_unfreeze'],
+            label_csv_path=run['label_csv_path'],
             label_csv_columns=run['label_csv_columns'], 
             num_workers=run['num_workers'], 
         )
@@ -527,6 +530,7 @@ grid_search_permutation RUN version_{version_number}""")
         ensemble_model_params = highest_performance_training_parameters['ensemble_model_params'],
         save_base_dir=highest_performance_training_parameters['save_base_dir'],
         fine_tune_unfreeze=highest_performance_training_parameters['fine_tune_unfreeze'],
+        label_csv_path=highest_performance_training_parameters['label_csv_path'],
         label_csv_columns=highest_performance_training_parameters['label_csv_columns'],
         num_workers=highest_performance_training_parameters['num_workers'], 
     )
