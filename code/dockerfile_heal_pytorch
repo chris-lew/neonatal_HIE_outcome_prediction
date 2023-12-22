@@ -10,6 +10,6 @@ RUN python3 -m pip install -U pip
 
 RUN pip install --no-cache-dir matplotlib jupyter_contrib_nbextensions jupyter_nbextensions_configurator \
 pydicom pandas 'jupyter<=6.5.4' scikit-image scikit-learn opencv-python tensorboard nibabel pynrrd unet SimpleITK \
-torchmetrics pytorch-lightning monai rising torchio seaborn
+torchmetrics pytorch-lightning monai rising torchio seaborn torchcam
 
 RUN pip install git+https://github.com/shijianjian/EfficientNet-PyTorch-3D

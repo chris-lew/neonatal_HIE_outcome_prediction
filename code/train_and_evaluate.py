@@ -9,6 +9,8 @@ from datetime import datetime
 from monai.networks.nets import EfficientNetBN
 import random
 import numpy as np
+from collections import OrderedDict
+
 
 import rising.transforms as rtr
 from rising.loading import DataLoader, default_transform_call
@@ -64,7 +66,21 @@ def get_model_by_params(
 
         # To do: add model loading
         if pretrained_path:
-            pass # Add loading
+            saved_state_dict = torch.load(pretrained_path)['state_dict'] # Assumes using saved lightning model
+            
+
+            new_saved_state_dict = OrderedDict()
+
+            # A little messy, but lightning includes 'net' at the beginning of all keys
+
+            for k  in saved_state_dict.keys():
+                new_saved_state_dict[k.removeprefix('net.')] = saved_state_dict[k].clone()
+
+            del saved_state_dict
+            gc.collect()
+
+            pretrained_layers = list(new_saved_state_dict.keys())
+            net.load_state_dict(new_saved_state_dict)
 
     elif net_architecture == 'resnet':
 
@@ -254,6 +270,7 @@ def train_model(
     densenet_class = None,
     basic_block_depth = 3,
     pretrained_path = None,
+    unfreeze_pretrained_prefixes = None,
     ensemble_model_params = None,
     num_workers = 4,
     save_base_dir = "../ext_storage/saved_models_storage",
@@ -299,6 +316,8 @@ def train_model(
         Block depth for basic CNN
     pretrained_path: str or Path
         Pretrained model to load
+    unfreeze_pretrained_prefixes: list
+        List of layers to unfreeze that are loaded from pretrained path
     ensemble_model_params: dict
         Ensemble model parameters, see see training_parameters.py
     num_workers: int
@@ -359,7 +378,7 @@ def train_model(
         num_workers=num_workers, 
         drop_last=True,
         batch_transforms=transforms,
-        pin_memory=True
+        pin_memory=False
     )
 
     if val_subject_list:
@@ -368,7 +387,7 @@ def train_model(
             batch_size=batch_size, 
             shuffle=False, 
             num_workers=num_workers, 
-            pin_memory=True
+            pin_memory=False
         )
 
     ###############################################################################
@@ -388,6 +407,13 @@ def train_model(
         pretrained_path,
         ensemble_model_params,
     )
+
+    if unfreeze_pretrained_prefixes:
+        # Avoid accidentally iterating through a string
+        assert type(unfreeze_pretrained_prefixes) == list, 'unfreeze_pretrained_prefixes MUST be a list'
+
+        for prefix in unfreeze_pretrained_prefixes:
+            pretrained_layers = [x for x in pretrained_layers if not x.startswith(prefix)]
 
     model = LitHEAL(
         net = net,
@@ -607,10 +633,10 @@ def cross_validation(
             num_workers=num_workers, 
             drop_last=True,
             batch_transforms=transforms,
-            pin_memory=True
+            pin_memory=False
         )
 
-        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
+        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=False)
 
         ###############################################################################
 
@@ -762,7 +788,7 @@ def predict_from_checkpoint_with_labels(
 
     # Create dataloaders
 
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=False)
 
     ###############################################################################
 

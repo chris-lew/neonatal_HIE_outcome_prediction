@@ -24,6 +24,8 @@ default_training_parameters = {
 
     # Model params
     'pretrained_path': None, # Note: to use pretrained models in ensemble this MUST be set to True
+    'unfreeze_pretrained_prefixes': None, # To unfreeze certain params that are loaded from pretrained path
+
     'basic_block_depth': 3, # For basic CNN model
     'dropout': 0.3, # For basic CNN model
     'resnet_class': None, # For resnet

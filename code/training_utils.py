@@ -137,6 +137,7 @@ Model {training_type} start: {datetime.now().strftime("%Y-%m-%d %H:%M")}
                 resnet_class = run['resnet_class'],
                 densenet_class = run['densenet_class'],
                 pretrained_path = run['pretrained_path'],
+                unfreeze_pretrained_prefixes = run['unfreeze_pretrained_prefixes'],
                 basic_block_depth = run['basic_block_depth'],
                 efficientnet_model_name = run['efficientnet_model_name'],
                 ensemble_model_params = run['ensemble_model_params'],

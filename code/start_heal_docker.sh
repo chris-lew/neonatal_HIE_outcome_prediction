@@ -6,6 +6,6 @@ docker run \
 	--rm \
 	--name heal_ml \
 	--gpus all \
-	--shm-size=30g \
+	--shm-size=32g \
 	heal_ml \
 	jupyter notebook --allow-root --ip=0.0.0.0 --port=8789

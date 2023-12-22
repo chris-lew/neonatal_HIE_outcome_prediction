@@ -1,0 +1,97 @@
+Variable / Field Name,Form Name,Section Header,Field Type,Field Label,"Choices, Calculations, OR Slider Labels",Field Note,Text Validation Type OR Show Slider Number,Text Validation Min,Text Validation Max,Identifier?,Branching Logic (Show field only if...),Required Field?,Custom Alignment,Question Number (surveys only),Matrix Group Name,Matrix Ranking?,Field Annotation
+studyid,analysis_variables,,text,Study ID,,,,,,,,,RH,,,,
+derived24_desc3,analysis_variables,,descriptive,"Analysis Variables:
+<p style=""background-color:blue; height:2px"">",,,,,,,,,,,,,
+txtassign,analysis_variables,,radio,Treatment Assignment:,"0, Placebo | 1, Epo",,,,,,,,,,,,
+birth_date,analysis_variables,,text,Birth date - time ,,,datetime_ymd,,,,,,,,,,
+hours2randomize,analysis_variables,,text,Hours until randomization:,,hours since birth,,,,,,,,,,,
+hours2firstdose,analysis_variables,,text,Hours to first dose:,,hours since birth,,,,,,,,,,,
+sex,analysis_variables,,radio,Sex:,"0, Female | 1, Male",,,,,,,,,,,,
+hieseverity,analysis_variables,,radio,HIE Severity:,"0, Moderate | 1, Severe",,,,,,,,,,,,
+site,analysis_variables,,radio,Recruitment Site:,"1, CCH | 2, CHM | 3, CHP | 4, CLA | 5, CNM | 6, DAL | 7, FTW | 8, IND | 9, NCH | 10, PIT | 11, STA | 12, STX | 13, UCF | 14, UOU | 15, UOW | 16, VCH | 17, WUS",,,,,,,,,,,,
+derived24_desc2,analysis_variables,,descriptive,"Derived analysis flags:
+<p style=""background-color:blue; height:2px"">",,,,,,,,,,,,,
+mittflag,analysis_variables,,radio,Modified intention to treat (mITT) flag,"0, Do not include in mITT analysis | 1, Include in mITT analysis",,,,,,,,,,,,
+primary_status,analysis_variables,,radio,Primary endpoint outcome status:,"0, Not collected, not enough information to adjudicate | 1, Withdrew | 2, Adjudicated by consensus | 3, Collected outside of window | 4, Collected per protocol",,,,,,,,,,,,
+primary_adjudicated,analysis_variables,,radio,Adjudicated Outcome,"9, Not enough information | 0, No NDI | 1, Mild NDI | 2, Moderate to Severe NDI",,,,,,,,,,,,
+primary_adjdate,analysis_variables,,text,Adjudication Date,,,,,,,,,,,,,
+derived24_desc1,analysis_variables,,descriptive,"Derived outcome variables:
+<p style=""background-color:blue; height:2px"">",,,,,,,,,,,,,
+primary_mitt,analysis_variables,,radio,"Primary outcome (mITT):
+Death <u>or</u> 
+NDI :
+Bayley Cognitive < 90, or 
+GMFCS <u>></u> 1, or
+CP of any type","1, Death or NDI | 0, No death or NDI",,,,,,,,,,,,
+primary_all,analysis_variables,,radio,"Primary outcome (mITT + adjudicated):
+Death <u>or</u> 
+NDI :
+Bayley Cognitive < 90, or 
+GMFCS <u>></u> 1, or
+CP of any type","1, Death or NDI | 0, No death or NDI",,,,,,,,,,,,
+secondary_mitt,analysis_variables,,radio,"Secondary outcome (mITT):
+1 = Normal (alive and, no motor deficit on NE and, BSID3 cog >=90)
+2 = Mild NDI (alive and, (no motor deficit or BSID3 cog = 85))
+3 = Moderate to Severe NDI (alive and, (motor deficit or BSID3 < 85))
+4 = Died","1, Normal | 2, Mild NDI | 3, Moderate to Severe NDI | 4, Died",,,,,,,,,,,,
+secondary_all,analysis_variables,,radio,"Secondary outcome (mITT + adjudicated):
+1 = Normal (alive and, no motor deficit on NE and, BSID3 cog >=90)
+2 = Mild NDI (alive and, (no motor deficit or BSID3 cog = 85))
+3 = Moderate to Severe NDI (alive and, (motor deficit or BSID3 < 85))
+4 = Died","1, Normal | 2, Mild NDI | 3, Moderate to Severe NDI | 4, Died",,,,,,,,,,,,
+death24m,analysis_variables,,radio,Died prior to primary endpoint at 24-months:,"1, Yes | 0, No",,,,,,,,,,,,
+days2death,analysis_variables,,text,Days to death (calculated as day of death minus day of birth):,,,,,,,,,,,,,
+days2neuroexam,analysis_variables,,text,Days to neuro exam (calculated as day of exam minus day of birth):,,,,,,,,,,,,,
+days2bsidexam,analysis_variables,,text,Days to Bayley III exam (calculated as day of exam minus day of birth):,,,,,,,,,,,,,
+days2m24phone,analysis_variables,,text,Days to 24 month phone call (calculated as day of phone call minus day of birth):,,,,,,,,,,,,,
+days2cbcl,analysis_variables,,text,CBCL survey completion day of life:,,,,,,,,,,,,,
+cpstatus,analysis_variables,,text,"CP status
+R code used to determine CP status:
+## Get determination of CP:
+lowerext.l <- apply(data.frame(as.numeric(ne_le_adductl==2), as.numeric(ne_le_popliteall==2), as.numeric(ne_le_achillesl==2), 
+                               as.numeric(ne_le_strengthl==2 | ne_le_strengthl==3 ), as.numeric(ne_le_symmetry==3 | ne_le_symmetry==4)), 1, sum, na.rm=T)
+lowerext.r <- apply(data.frame(as.numeric(ne_le_adductr==2), as.numeric(ne_le_poplitealr==2), as.numeric(ne_le_achillesr==2), 
+                               as.numeric(ne_le_strengthr==2 | ne_le_strengthr==3 ), as.numeric(ne_le_symmetry==2 | ne_le_symmetry==4)), 1, sum, na.rm=T)
+upperext.l <- apply(data.frame(as.numeric(ne_ue_strengthl==2 | ne_ue_strengthl==3), as.numeric(ne_lat_reflexl==2 | ne_lat_reflexl==3), 
+                               as.numeric(ne_para_reflexl==2 | ne_para_reflexl==3), 
+                               as.numeric(ne_ue_tonel==2 | ne_ue_tonel==3 | ne_ue_tonel==4), 
+                               as.numeric(ne_ue_handpostl==2 | ne_ue_handpostl==3 | ne_ue_handpostl==4), 
+                               as.numeric(ne_ue_graspl==3 | ne_ue_graspl==4 | ne_ue_graspl==5), 
+                               as.numeric(ne_ue_symmetry==3 | ne_ue_symmetry==4)), 1, sum, na.rm=T)
+upperext.r <- apply(data.frame(as.numeric(ne_ue_strengthr==2 | ne_ue_strengthr==3), as.numeric(ne_lat_reflexr==2 | ne_lat_reflexr==3), 
+                               as.numeric(ne_para_reflexr==2 | ne_para_reflexr==3), 
+                               as.numeric(ne_ue_toner==2 | ne_ue_toner==3 | ne_ue_toner==4), 
+                               as.numeric(ne_ue_handpostr==2 | ne_ue_handpostr==3 | ne_ue_handpostr==4), 
+                               as.numeric(ne_ue_graspr==3 | ne_ue_graspr==4 | ne_ue_graspr==5), 
+                               as.numeric(ne_ue_symmetry==2 | ne_ue_symmetry==4)), 1, sum, na.rm=T)
+wna <- which(is.na(ne_tested) | ne_tested==0)
+
+## Insert NAs wherever a neuro exam was listed as not being done:
+lowerext.l[wna] <- NA
+lowerext.r[wna] <- NA
+upperext.l[wna] <- NA
+upperext.r[wna] <- NA
+
+cpstatus24m <- rep(NA, length(lowerext.l))
+cpstatus24m[which(lowerext.l < 2 & lowerext.r < 2 & upperext.l < 3 & upperext.r < 3)] <- ""No CP""
+cpstatus24m[which(lowerext.l < 2 & lowerext.r < 2 & (upperext.l > 2 | upperext.r > 2))] <- ""Hemiparesis""
+cpstatus24m[which(lowerext.l < 2 & lowerext.r < 2 & (upperext.l > 2 & upperext.r > 2))] <- ""Quadriparesis""
+cpstatus24m[which((lowerext.l > 1 | lowerext.r > 1) & upperext.l < 3 & upperext.r < 3)] <- ""Diparesis""
+cpstatus24m[which((lowerext.l > 1  & upperext.l > 2) | (lowerext.r > 1 & upperext.r > 2))] <- ""Hemiparesis (same side)""
+cpstatus24m[which((lowerext.l > 1  & upperext.r > 2) | (lowerext.r > 1 & upperext.l > 2))] <- ""Quadraparesis (opposite side)""
+cpstatus24m[which((lowerext.l > 1 | lowerext.r > 1) & upperext.l >2 & upperext.r >2)] <- ""Quadriparesis""
+cpstatus24m[which(lowerext.l > 1 & lowerext.r > 1 & upperext.l < 3 & upperext.r < 3)] <- ""Diparesis""
+cpstatus24m[which(lowerext.l > 1 & lowerext.r > 1 & (upperext.l > 2 | upperext.r > 2))] <- ""Quadriparesis""
+cpstatus24m[which(lowerext.l > 1 & lowerext.r > 1 & upperext.l > 2 & upperext.r > 2)] <- ""Quadriparesis""
+cpstatus <- cpstatus24m",,,,,,,,,,,,,
+gmfcs_derived,analysis_variables,,radio,"GMFCS - Use gmfcs_neuro if available. If gmfcs_neuro is missing, then use gmfcs_phone.","0, 0 | 0.5, 0.5 | 1, 1 | 2, 2 | 3, 3 | 4, 4 | 5, 5",,,,,,,,,,,,
+gmfcs_neuro,analysis_variables,,radio,GMFCS - In person,"0, 0 | 0.5, 0.5 | 1, 1 | 2, 2 | 3, 3 | 4, 4 | 5, 5",,,,,,,,,,,,
+gmfcs_phone,analysis_variables,,radio,GMFCS - Over the phone with parents,"0, 0 | 0.5, 0.5 | 1, 1 | 2, 2 | 3, 3 | 4, 4 | 5, 5",,,,,,,,,,,,
+anyndi,analysis_variables,,radio,Any NDI (any CP or GMFCS >= 1 or BSID-3 cog < 90):,"0, No NDI | 1, Any NDI",,,,,,,,,,,,
+mod2sevndi,analysis_variables,,radio,"Moderate to Severe NDI (QP, or [HP or DP] and GMFCS >=1, or GMFCS >= 2, or BSID-3 cog < 85):","0, No Moderate to Severe NDI | 1, Moderate to Severe NDI",,,,,,,,,,,,
+sevndi,analysis_variables,,radio,"Severe NDI (QP and GMFCS >=1, or GMFCS >= 2, or BSID-3 cog < 70):","0, No Severe NDI | 1, Severe NDI",,,,,,,,,,,,
+mom_race,table1,,radio,Maternal Race,"1, White | 2, Black | 3, Asian | 4, Multiple / Other | 5, Unknown / not reported",,,,,,,,,,,,
+mom_ethnicity,table1,,radio,Maternal Ethnicity,"0, Not hispanic/not reported | 1, Hispanic ethnicity",,,,,,,,,,,,
+mom_age,table1,,text,Maternal Age (years),,,,,,,,,,,,,
+mom_education,table1,,radio,Maternal Education,"0, High school or less | 1, Some college or university | 2, College graduate, or post-grad | 3, Not reported",,,,,,,,,,,,
+inf_gestage,table1,,text,Infant gestational age in weeks,,,,,,,,,,,,,
