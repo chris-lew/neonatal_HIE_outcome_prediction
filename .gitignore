@@ -6,6 +6,7 @@ code/archive/
 code/for_evan*
 code/testing*
 data/MedicalNet_pytorch_files2/
+data/HEALAnalysisDatabase*
 data/OLD_splits/
 data/sample_set/
 docs/*
