@@ -30,3 +30,9 @@ The pretrained model weights for the OPiNE multichannel model and each MRI seque
 ![model_architecture](model_architecture.png)
 
 The remainder of the code utilized during training, prediction, and evaluation can be found under `train_and_evaluate.py`. Additional documentation is included for each function within the file. 
+
+### Citation
+
+Our work has been published in Radiology: Artificial Intelligence. If you utilize the contents of this repository and/or would like to reference our work, please use the following:
+
+Lew CO, Calabrese E, Chen JV, Tang F, Chaudhari G, Lee A, Faro J, Juul S, Mathur A, McKinstry RC, Wisnowski JL, Rauschecker A, Wu YW, Li Y. Artificial Intelligence Outcome Prediction in Neonates with Encephalopathy (AI-OPiNE). Radiol Artif Intell. 2024 Sep;6(5):e240076. doi: 10.1148/ryai.240076. PMID: 38984984.
